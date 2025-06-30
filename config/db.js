@@ -1,13 +1,15 @@
 const { Pool } = require('pg');
-require('dotenv').config();
 
 const pool = new Pool({
-  user: process.env.PGUSER,
-  host: process.env.PGHOST,
-  database: process.env.PGDATABASE,
-  password: process.env.PGPASSWORD,
-  port: process.env.PGPORT,
-  family: 4,
+  user: 'aipos',
+  host: 'postgresql-aipos.alwaysdata.net',
+  database: 'aipos_myshop',
+  password: 'Serge!@#123',
+  port: 5432,
+  ssl: {
+    rejectUnauthorized: false, // Required for self-signed certs or shared hosting
+  },
+  family: 4, // Force IPv4
 });
 
 module.exports = pool;

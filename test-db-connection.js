@@ -1,10 +1,14 @@
 const pool = require('./config/db');
 
-pool.query('SELECT NOW()', (err, res) => {
-  if (err) {
-    console.error('Connection failed:', err);
-  } else {
+async function testConnection() {
+  try {
+    const res = await pool.query('SELECT NOW()');
     console.log('Connection successful! Server time:', res.rows[0].now);
+  } catch (err) {
+    console.error('Connection failed:', err);
+  } finally {
+    pool.end();
   }
-  pool.end();
-}); 
+}
+
+testConnection();
