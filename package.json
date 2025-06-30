@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "build": "echo 'No build step required'",
-    "postinstall": "npm install"
+    "postinstall": "npm run build"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
