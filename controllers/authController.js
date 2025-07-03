@@ -22,18 +22,22 @@ async function register(req, res) {
 // Login user
 async function login(req, res) {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required.' });
+    const { email, password, role } = req.body;
+    if (!email || !password || !role) {
+      return res.status(400).json({ error: 'Email, password, and role are required.' });
     }
-    const user = await userModel.getUserByEmail(email);
+    const user = await userModel.getUserByEmailAndRole(email, role);
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials.' });
+      return res.status(401).json({ error: 'Invalid credentials.fghjkfghjklfghj' });
     }
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid credentials.' });
     }
+    // if(password !== user.password_hash){
+    //   return res.status(401).json({ error: 'Invalid credentials. password' });
+      
+    // }
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
     res.json({ token, user });
   } catch (err) {

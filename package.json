@@ -4,6 +4,7 @@
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
+    
     "start": "node server.js",
     "build": "echo 'No build step required'",
     "postinstall": "npm run build"

@@ -15,7 +15,7 @@ async function getCustomerById(id) {
 // Create customer
 async function createCustomer(data) {
   const {
-    customer_code, first_name, last_name, email, phone, date_of_birth, gender,
+     customer_code, first_name, last_name, email, phone, date_of_birth, gender,
     address_line1, address_line2, city, state, postal_code, country,
     total_purchases, total_spent, average_order_value, preferred_category_id,
     customer_lifetime_value, loyalty_points, marketing_opt_in, preferred_contact_method,
@@ -69,7 +69,10 @@ async function deleteCustomer(id) {
 // Get the latest customer_code
 async function getLatestCustomerCode() {
   const { rows } = await db.query(
-    `SELECT customer_code FROM customers ORDER BY customer_code DESC LIMIT 1`
+    `SELECT customer_code FROM customers
+     WHERE customer_code LIKE 'CUST-%'
+     ORDER BY CAST(SUBSTRING(customer_code, 6) AS INTEGER) DESC
+     LIMIT 1`
   );
   return rows[0];
 }

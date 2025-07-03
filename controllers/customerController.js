@@ -23,7 +23,7 @@ async function generateSequentialCustomerCode() {
   const result = await customerModel.getLatestCustomerCode();
   let nextNumber = 1;
   if (result && result.customer_code) {
-    const match = result.customer_code.match(/^COST-(\d{3})$/);
+    const match = result.customer_code.match(/^CUST-(\d{3})$/);
     if (match) {
       const lastNum = parseInt(match[1], 10);
       if (!isNaN(lastNum)) {
@@ -32,7 +32,7 @@ async function generateSequentialCustomerCode() {
     }
   }
   const padded = String(nextNumber).padStart(3, '0');
-  return `COST-${padded}`;
+  return `CUST-${padded}`;
 }
 
 async function createCustomer(req, res) {
@@ -44,7 +44,8 @@ async function createCustomer(req, res) {
     });
     res.status(201).json(newCustomer);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to create customer', details: err.message });
+    console.error('Create Customer Error:', err);
+    res.status(500).json({ error: 'Failed to create customer', details: err.message, errorObj: err });
   }
 }
 

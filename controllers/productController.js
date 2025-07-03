@@ -36,7 +36,10 @@ async function getProductById(req, res) {
 
 async function updateProduct(req, res) {
   try {
-    const product = await productModel.updateProduct(req.params.id, req.body);
+    // Attach user_id and change_reason for price history
+    const user_id = req.body.user_id || (req.user && req.user.id) || null;
+    const change_reason = req.body.change_reason || 'Price update';
+    const product = await productModel.updateProduct(req.params.id, { ...req.body, user_id, change_reason });
     if (!product) return res.status(404).json({ error: 'Product not found' });
     res.json(product);
   } catch (err) {
@@ -60,10 +63,20 @@ async function deleteProduct(req, res) {
   }
 }
 
+async function getPriceHistory(req, res) {
+  try {
+    const history = await productModel.getPriceHistory(req.params.id);
+    res.json(history);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 module.exports = {
   createProduct,
   getProducts,
   getProductById,
   updateProduct,
   deleteProduct,
+  getPriceHistory,
 }; 

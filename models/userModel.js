@@ -42,6 +42,12 @@ async function getUserByEmail(email) {
   return await User.findOne({ email });
 }
 
+// Get user by email and role
+async function getUserByEmailAndRole(email, role) {
+  const result = await pool.query('SELECT * FROM users WHERE email = $1 AND role = $2', [email, role]);
+  return result.rows[0];
+}
+
 module.exports = {
   createUser,
   getAllUsers,
@@ -49,4 +55,5 @@ module.exports = {
   updateUser,
   deleteUser,
   getUserByEmail,
+  getUserByEmailAndRole,
 }; 
