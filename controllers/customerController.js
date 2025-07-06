@@ -1,77 +1,54 @@
 const customerModel = require('../models/customerModel');
 
-async function getAllCustomers(req, res) {
+// Get all customers
+exports.getCustomers = async (req, res) => {
   try {
     const customers = await customerModel.getAllCustomers();
     res.json(customers);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch customers' });
+    res.status(500).json({ error: 'Failed to fetch customers', details: err.message });
   }
-}
+};
 
-async function getCustomerById(req, res) {
+// Get customer by ID
+exports.getCustomerById = async (req, res) => {
   try {
     const customer = await customerModel.getCustomerById(req.params.id);
     if (!customer) return res.status(404).json({ error: 'Customer not found' });
     res.json(customer);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch customer' });
+    res.status(500).json({ error: 'Failed to fetch customer', details: err.message });
   }
-}
+};
 
-async function generateSequentialCustomerCode() {
-  const result = await customerModel.getLatestCustomerCode();
-  let nextNumber = 1;
-  if (result && result.customer_code) {
-    const match = result.customer_code.match(/^CUST-(\d{3})$/);
-    if (match) {
-      const lastNum = parseInt(match[1], 10);
-      if (!isNaN(lastNum)) {
-        nextNumber = lastNum + 1;
-      }
-    }
-  }
-  const padded = String(nextNumber).padStart(3, '0');
-  return `CUST-${padded}`;
-}
-
-async function createCustomer(req, res) {
+// Create customer
+exports.createCustomer = async (req, res) => {
   try {
-    const customer_code = await generateSequentialCustomerCode();
-    const newCustomer = await customerModel.createCustomer({
-      ...req.body,
-      customer_code,
-    });
-    res.status(201).json(newCustomer);
+    const id = await customerModel.upsertCustomer(req.body);
+    const customer = await customerModel.getCustomerById(id);
+    res.status(201).json(customer);
   } catch (err) {
-    console.error('Create Customer Error:', err);
-    res.status(500).json({ error: 'Failed to create customer', details: err.message, errorObj: err });
+    res.status(400).json({ error: 'Failed to create customer', details: err.message });
   }
-}
+};
 
-async function updateCustomer(req, res) {
+// Update customer
+exports.updateCustomer = async (req, res) => {
   try {
-    const updated = await customerModel.updateCustomer(req.params.id, req.body);
-    if (!updated) return res.status(404).json({ error: 'Customer not found' });
-    res.json(updated);
+    const customer = await customerModel.updateCustomer(req.params.id, req.body);
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    res.json(customer);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to update customer' });
+    res.status(400).json({ error: 'Failed to update customer', details: err.message });
   }
-}
+};
 
-async function deleteCustomer(req, res) {
+// Delete customer
+exports.deleteCustomer = async (req, res) => {
   try {
     await customerModel.deleteCustomer(req.params.id);
-    res.json({ message: 'Customer deleted' });
+    res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to delete customer' });
+    res.status(400).json({ error: 'Failed to delete customer', details: err.message });
   }
-}
-
-module.exports = {
-  getAllCustomers,
-  getCustomerById,
-  createCustomer,
-  updateCustomer,
-  deleteCustomer,
 }; 

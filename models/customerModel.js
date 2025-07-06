@@ -1,87 +1,69 @@
-const db = require('../config/db');
+const pool = require('../config/db');
+
+// Upsert customer by email or phone
+exports.upsertCustomer = async (customer) => {
+  let { full_name, email, phone, tin } = customer;
+  // Use default email if not provided
+  if (!email) {
+    email = 'cust@gmail.com';
+  }
+  let existing;
+  if (email) {
+    const res = await pool.query('SELECT * FROM customers WHERE email = $1', [email]);
+    existing = res.rows[0];
+  }
+  if (!existing && phone) {
+    const res = await pool.query('SELECT * FROM customers WHERE phone = $1', [phone]);
+    existing = res.rows[0];
+  }
+  if (existing) {
+    await pool.query(
+      `UPDATE customers SET full_name = $1, tin = $2, updated_at = NOW() WHERE id = $3`,
+      [full_name, tin || null, existing.id]
+    );
+    return existing.id;
+  } else {
+    // Generate next customer_code
+    const codeRes = await pool.query(`SELECT customer_code FROM customers WHERE customer_code IS NOT NULL ORDER BY customer_code DESC LIMIT 1`);
+    let nextNum = 1;
+    if (codeRes.rows.length > 0) {
+      const lastCode = codeRes.rows[0].customer_code;
+      const match = lastCode && lastCode.match(/CUST-(\d+)/);
+      if (match) nextNum = parseInt(match[1], 10) + 1;
+    }
+    const customer_code = `CUST-${String(nextNum).padStart(3, '0')}`;
+    const result = await pool.query(
+      `INSERT INTO customers (full_name, email, phone, tin, customer_code) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [full_name, email, phone, tin || null, customer_code]
+    );
+    return result.rows[0].id;
+  }
+};
 
 // Get all customers
-async function getAllCustomers() {
-  const { rows } = await db.query('SELECT * FROM customers ORDER BY created_at DESC');
-  return rows;
-}
+exports.getAllCustomers = async () => {
+  const result = await pool.query('SELECT * FROM customers ORDER BY created_at DESC');
+  return result.rows;
+};
 
 // Get customer by ID
-async function getCustomerById(id) {
-  const { rows } = await db.query('SELECT * FROM customers WHERE id = $1', [id]);
-  return rows[0];
-}
+exports.getCustomerById = async (id) => {
+  const result = await pool.query('SELECT * FROM customers WHERE id = $1', [id]);
+  return result.rows[0];
+};
 
-// Create customer
-async function createCustomer(data) {
-  const {
-     customer_code, first_name, last_name, email, phone, date_of_birth, gender,
-    address_line1, address_line2, city, state, postal_code, country,
-    total_purchases, total_spent, average_order_value, preferred_category_id,
-    customer_lifetime_value, loyalty_points, marketing_opt_in, preferred_contact_method,
-    is_active, last_visit
-  } = data;
-  const { rows } = await db.query(
-    `INSERT INTO customers (
-      customer_code, first_name, last_name, email, phone, date_of_birth, gender,
-      address_line1, address_line2, city, state, postal_code, country,
-      total_purchases, total_spent, average_order_value, preferred_category_id,
-      customer_lifetime_value, loyalty_points, marketing_opt_in, preferred_contact_method,
-      is_active, last_visit
-    ) VALUES (
-      $1,$2,$3,$4,$5,$6,$7,
-      $8,$9,$10,$11,$12,$13,
-      $14,$15,$16,$17,
-      $18,$19,$20,$21,
-      $22,$23
-    ) RETURNING *`,
-    [
-      customer_code, first_name, last_name, email, phone, date_of_birth, gender,
-      address_line1, address_line2, city, state, postal_code, country,
-      total_purchases, total_spent, average_order_value, preferred_category_id,
-      customer_lifetime_value, loyalty_points, marketing_opt_in, preferred_contact_method,
-      is_active, last_visit
-    ]
+// Update customer by ID
+exports.updateCustomer = async (id, customer) => {
+  const { full_name, email, phone, tin } = customer;
+  const result = await pool.query(
+    `UPDATE customers SET full_name = $1, email = $2, phone = $3, tin = $4, updated_at = NOW() WHERE id = $5 RETURNING *`,
+    [full_name, email, phone, tin || null, id]
   );
-  return rows[0];
-}
+  return result.rows[0];
+};
 
-// Update customer (partial update for brevity)
-async function updateCustomer(id, data) {
-  const {
-    first_name, last_name, email, phone, city, state, postal_code, country, is_active
-  } = data;
-  const { rows } = await db.query(
-    `UPDATE customers SET
-      first_name = $1, last_name = $2, email = $3, phone = $4,
-      city = $5, state = $6, postal_code = $7, country = $8, is_active = $9, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $10 RETURNING *`,
-    [first_name, last_name, email, phone, city, state, postal_code, country, is_active, id]
-  );
-  return rows[0];
-}
-
-// Delete customer
-async function deleteCustomer(id) {
-  await db.query('DELETE FROM customers WHERE id = $1', [id]);
-}
-
-// Get the latest customer_code
-async function getLatestCustomerCode() {
-  const { rows } = await db.query(
-    `SELECT customer_code FROM customers
-     WHERE customer_code LIKE 'CUST-%'
-     ORDER BY CAST(SUBSTRING(customer_code, 6) AS INTEGER) DESC
-     LIMIT 1`
-  );
-  return rows[0];
-}
-
-module.exports = {
-  getAllCustomers,
-  getCustomerById,
-  createCustomer,
-  updateCustomer,
-  deleteCustomer,
-  getLatestCustomerCode,
+// Delete customer by ID
+exports.deleteCustomer = async (id) => {
+  await pool.query('DELETE FROM customers WHERE id = $1', [id]);
+  return { success: true };
 }; 

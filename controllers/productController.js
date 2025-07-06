@@ -1,4 +1,5 @@
 const productModel = require('../models/productModel');
+const pool = require('../config/db');
 
 async function createProduct(req, res) {
   try {
@@ -17,7 +18,8 @@ async function createProduct(req, res) {
 
 async function getProducts(req, res) {
   try {
-    const products = await productModel.getProducts();
+    const categoryId = req.query.category;
+    const products = await productModel.getProducts(categoryId);
     res.json(products);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -72,6 +74,32 @@ async function getPriceHistory(req, res) {
   }
 }
 
+async function getInventoryData(req, res) {
+  try {
+    const result = await pool.query(
+      `SELECT 
+         p.name,
+         c.name as category_name,
+         p.current_stock as quantity,
+         p.selling_price as price,
+         CASE 
+           WHEN p.current_stock = 0 THEN 'Out-Stock'
+           WHEN p.current_stock <= COALESCE(p.min_stock_level, 5) THEN 'Low Stock'
+           ELSE 'In Stock'
+         END as status
+       FROM products p
+       LEFT JOIN categories c ON p.category_id = c.id
+       WHERE p.is_active = true
+       ORDER BY p.current_stock ASC
+       LIMIT 10`
+    );
+    
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 module.exports = {
   createProduct,
   getProducts,
@@ -79,4 +107,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   getPriceHistory,
+  getInventoryData,
 }; 

@@ -5,10 +5,10 @@ const supplierRoutes = require('./routes/supplierRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const productRoutes = require('./routes/productRoutes');
 const storeRoutes = require('./routes/storeRoutes');
-const saleItemRoutes = require('./routes/saleItemRoutes');
+const saleRoutes = require('./routes/saleRoutes');
+// const saleItemRoutes = require('./routes/saleItemRoutes');
 const authRoutes = require('./routes/authRoutes');
 const authenticateToken = require('./middleware/authMiddleware');
-const salesRoutes = require('./routes/salesRoutes');
 const customerRoutes = require('./routes/customerRoutes');
 
 const app = express();
@@ -22,9 +22,9 @@ app.use('/api/suppliers', supplierRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/stores', storeRoutes);
-app.use('/api/sale_items', saleItemRoutes);
+app.use('/api/sales', saleRoutes);
+// app.use('/api/sale_items', saleItemRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/sales', salesRoutes);
 app.use('/api/customers', customerRoutes);
 
 app.get('/', (req, res) => {

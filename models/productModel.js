@@ -37,14 +37,20 @@ async function createProduct(data) {
   return result.rows[0];
 }
 
-async function getProducts() {
-  const result = await pool.query(
-    `SELECT p.*, c.name as category_name, s.name as supplier_name
-     FROM products p
-     LEFT JOIN categories c ON p.category_id = c.id
-     LEFT JOIN suppliers s ON p.supplier_id = s.id
-     ORDER BY p.created_at DESC`
-  );
+async function getProducts(categoryId) {
+  let query = `
+    SELECT p.*, c.name as category_name, s.name as supplier_name
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.id
+    LEFT JOIN suppliers s ON p.supplier_id = s.id
+  `;
+  let params = [];
+  if (categoryId && categoryId !== 'All') {
+    query += ' WHERE p.category_id = $1';
+    params.push(categoryId);
+  }
+  query += ' ORDER BY p.created_at DESC';
+  const result = await pool.query(query, params);
   return result.rows;
 }
 
