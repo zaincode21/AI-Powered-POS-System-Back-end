@@ -12,5 +12,7 @@ router.post('/', customerController.createCustomer);
 router.put('/:id', customerController.updateCustomer);
 // DELETE /api/customers/:id
 router.delete('/:id', customerController.deleteCustomer);
+// GET /api/customers/insights
+router.get('/insights', customerController.getCustomerInsights);
 
 module.exports = router; 

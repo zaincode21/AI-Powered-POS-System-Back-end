@@ -28,4 +28,12 @@ exports.insertSale = async (sale, customer_id) => {
     ]
   );
   return result.rows[0];
+};
+
+exports.getSalesByCustomerId = async (customer_id) => {
+  const result = await pool.query(
+    'SELECT * FROM sales WHERE customer_id = $1 ORDER BY created_at ASC',
+    [customer_id]
+  );
+  return result.rows;
 }; 

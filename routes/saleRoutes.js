@@ -14,4 +14,7 @@ router.get('/recent', saleController.getRecentSales);
 // GET /api/sales/daily - Get daily sales data for charts
 router.get('/daily', saleController.getDailySales);
 
+// GET /api/sales/:saleId/items - Get sale items for a specific sale
+router.get('/:saleId/items', saleController.getSaleItems);
+
 module.exports = router; 
