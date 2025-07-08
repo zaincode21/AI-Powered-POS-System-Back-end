@@ -3,9 +3,9 @@ const pool = require('../config/db');
 // Upsert customer by email or phone
 exports.upsertCustomer = async (customer) => {
   let { full_name, email, phone, tin } = customer;
-  // Use default email if not provided
+  // Use unique default email if not provided
   if (!email) {
-    email = 'cust@gmail.com';
+    email = `cust_${Date.now()}@gmail.com`;
   }
   let existing;
   if (email) {

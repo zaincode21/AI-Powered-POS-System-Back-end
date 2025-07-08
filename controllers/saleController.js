@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 const { upsertCustomer } = require('../models/customerModel');
-const { insertSale } = require('../models/saleModel');
-const { insertSaleItem } = require('../models/saleItemModel');
+const { insertSale, getAllSales, deleteSale } = require('../models/saleModel');
+const { insertSaleItem, getSaleItemsBySaleId } = require('../models/saleItemModel');
 
 // Main sale transaction
 exports.createSale = async (req, res) => {
@@ -68,7 +68,7 @@ exports.getSalesStats = async (req, res) => {
        WHERE (current_stock <= COALESCE(min_stock_level, 5) OR current_stock = 0) AND is_active = true`
     );
     
-    // Best selling product (AI forecast placeholder)
+    // Best selling product
     const bestSellerResult = await pool.query(
       `SELECT p.name, COUNT(si.id) as sale_count
        FROM products p
@@ -153,13 +153,29 @@ exports.getDailySales = async (req, res) => {
 exports.getSaleItems = async (req, res) => {
   const { saleId } = req.params;
   try {
-    const result = await pool.query(
-      `SELECT * FROM sale_items WHERE sale_id = $1`,
-      [saleId]
-    );
-    res.json(result.rows);
+    const result = await getSaleItemsBySaleId(saleId);
+    res.json(result);
   } catch (err) {
     console.error('Error fetching sale items:', err);
     res.status(500).json({ error: 'Failed to fetch sale items', details: err.message });
+  }
+};
+
+exports.getAllSales = async (req, res) => {
+  try {
+    const sales = await getAllSales();
+    res.json(sales);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch sales' });
+  }
+};
+
+exports.deleteSale = async (req, res) => {
+  const { saleId } = req.params;
+  try {
+    await deleteSale(saleId);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete sale' });
   }
 }; 

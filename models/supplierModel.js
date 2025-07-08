@@ -11,7 +11,7 @@ async function createSupplier(data) {
 }
 
 async function getSuppliers() {
-  const result = await pool.query('SELECT * FROM suppliers ORDER BY created_at DESC');
+  const result = await pool.query('SELECT * FROM suppliers WHERE is_active = true ORDER BY created_at DESC');
   return result.rows;
 }
 
@@ -31,7 +31,7 @@ async function updateSupplier(id, data) {
 }
 
 async function deleteSupplier(id) {
-  const result = await pool.query('DELETE FROM suppliers WHERE id = $1 RETURNING *', [id]);
+  const result = await pool.query('UPDATE suppliers SET is_active = false WHERE id = $1 RETURNING *', [id]);
   return result.rows[0];
 }
 

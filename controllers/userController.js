@@ -62,12 +62,12 @@ async function updateUser(req, res) {
   }
 }
 
-// Delete user
+// Delete user (soft delete)
 async function deleteUser(req, res) {
   try {
     const user = await userModel.deleteUser(req.params.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json({ message: 'User deleted' });
+    res.json({ message: 'User deactivated' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

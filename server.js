@@ -10,6 +10,7 @@ const saleRoutes = require('./routes/saleRoutes');
 const authRoutes = require('./routes/authRoutes');
 const authenticateToken = require('./middleware/authMiddleware');
 const customerRoutes = require('./routes/customerRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -26,6 +27,7 @@ app.use('/api/sales', saleRoutes);
 // app.use('/api/sale_items', saleItemRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/report', reportRoutes);
 
 app.get('/', (req, res) => {
   res.send('POS Backend API is running');

@@ -10,12 +10,13 @@ async function createUser({ username, email, password_hash, full_name, role, is_
   return result.rows[0];
 }
 
-// Get all users
+// Get all users (only active)
 async function getAllUsers() {
   const result = await pool.query(`
     SELECT users.*, stores.name AS store_name
     FROM users
     LEFT JOIN stores ON users.store_id = stores.id
+    WHERE users.is_active = true
     ORDER BY users.created_at DESC
   `);
   return result.rows;
@@ -37,9 +38,9 @@ async function updateUser(id, { username, email, password_hash, full_name, role,
   return result.rows[0];
 }
 
-// Delete user
+// Delete user (soft delete)
 async function deleteUser(id) {
-  const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
+  const result = await pool.query('UPDATE users SET is_active = false WHERE id = $1 RETURNING *', [id]);
   return result.rows[0];
 }
 

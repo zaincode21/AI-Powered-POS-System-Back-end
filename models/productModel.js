@@ -9,6 +9,20 @@ async function createProduct(data) {
     barcode, sku, size, color, volume, weight,
     is_active, is_featured
   } = data;
+
+  // Get the highest product_number
+  const maxRes = await pool.query(
+    `SELECT product_number FROM products WHERE product_number IS NOT NULL ORDER BY product_number DESC LIMIT 1`
+  );
+  let nextNum = 1;
+  if (maxRes.rows.length > 0) {
+    const lastCode = maxRes.rows[0].product_number;
+    const match = lastCode && lastCode.match(/^PRD-(\d{3})$/);
+    if (match) nextNum = parseInt(match[1], 10) + 1;
+    else if (!isNaN(Number(lastCode))) nextNum = Number(lastCode) + 1;
+  }
+  const product_number = `PRD-${String(nextNum).padStart(3, '0')}`;
+
   const result = await pool.query(
     `INSERT INTO products (
       name, description, category_id, supplier_id,
@@ -16,14 +30,14 @@ async function createProduct(data) {
       current_stock, min_stock_level, max_stock_level,
       reorder_point, reorder_quantity,
       barcode, sku, size, color, volume, weight,
-      is_active, is_featured
+      is_active, is_featured, product_number
     ) VALUES (
       $1, $2, $3, $4,
       $5, $6,
       $7, $8, $9,
       $10, $11,
       $12, $13, $14, $15, $16, $17,
-      $18, $19
+      $18, $19, $20
     ) RETURNING *`,
     [
       name, description, category_id, supplier_id,
@@ -31,7 +45,7 @@ async function createProduct(data) {
       current_stock, min_stock_level, max_stock_level,
       reorder_point, reorder_quantity,
       barcode, sku, size, color, volume, weight,
-      is_active, is_featured
+      is_active, is_featured, product_number
     ]
   );
   return result.rows[0];

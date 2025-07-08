@@ -15,4 +15,15 @@ exports.insertSaleItem = async (sale_id, item) => {
       item.product_barcode || ''
     ]
   );
+};
+
+// Soft delete sale items by sale_id
+exports.softDeleteSaleItemsBySaleId = async (sale_id) => {
+  await pool.query('UPDATE sale_items SET is_active = false WHERE sale_id = $1', [sale_id]);
+};
+
+// Update get sale items to only return active ones
+exports.getSaleItemsBySaleId = async (sale_id) => {
+  const result = await pool.query('SELECT * FROM sale_items WHERE sale_id = $1 AND is_active = true', [sale_id]);
+  return result.rows;
 }; 
