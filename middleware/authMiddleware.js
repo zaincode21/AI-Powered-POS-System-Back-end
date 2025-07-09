@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
-function authenticateJWT(req, res, next) {
+function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token provided' });
@@ -12,16 +12,4 @@ function authenticateJWT(req, res, next) {
   });
 }
 
-function authorizeRoles(...roles) {
-  return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Forbidden: insufficient role' });
-    }
-    next();
-  };
-}
-
-module.exports = {
-  authenticateJWT,
-  authorizeRoles
-}; 
+module.exports = authenticateToken; 

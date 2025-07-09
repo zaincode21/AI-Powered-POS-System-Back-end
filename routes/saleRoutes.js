@@ -20,6 +20,9 @@ router.delete('/:saleId', saleController.deleteSale);
 // GET /api/sales/:saleId/items - Get sale items for a specific sale
 router.get('/:saleId/items', saleController.getSaleItems);
 
+// GET /api/sales/:saleId - Get sale details with items
+router.get('/:saleId', saleController.getSaleDetails);
+
 // GET /api/sales - Get all sales
 router.get('/', saleController.getAllSales);
 

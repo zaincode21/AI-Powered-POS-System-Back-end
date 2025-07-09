@@ -9,22 +9,51 @@ exports.createSale = async (req, res) => {
   try {
     await client.query('BEGIN');
     const { customer, sale, items } = req.body;
-    // 1. Upsert customer
+    
+    // 1. Validate stock availability before processing
+    for (const item of items) {
+      const stockResult = await client.query(
+        'SELECT current_stock, name FROM products WHERE id = $1',
+        [item.product_id]
+      );
+      
+      if (stockResult.rows.length === 0) {
+        throw new Error(`Product with ID ${item.product_id} not found`);
+      }
+      
+      const product = stockResult.rows[0];
+      if (product.current_stock < item.quantity) {
+        throw new Error(`Insufficient stock for ${product.name}. Available: ${product.current_stock}, Requested: ${item.quantity}`);
+      }
+    }
+    
+    // 2. Upsert customer
     const customer_id = await upsertCustomer(customer);
-    // 2. Insert sale
+    
+    // 3. Insert sale
     const saleResult = await insertSale(sale, customer_id);
     const sale_id = saleResult.id;
-    // 3. Insert sale items
+    
+    // 4. Insert sale items and update stock
     let totalQuantity = 0;
     for (const item of items) {
       await insertSaleItem(sale_id, item);
+      
+      // Update product stock
+      await client.query(
+        'UPDATE products SET current_stock = current_stock - $1, updated_at = NOW() WHERE id = $2',
+        [item.quantity, item.product_id]
+      );
+      
       totalQuantity += item.quantity;
     }
-    // 4. Update customer analytics
+    
+    // 5. Update customer analytics
     await client.query(
       `UPDATE customers SET total_purchases = COALESCE(total_purchases,0) + $1, total_spent = COALESCE(total_spent,0) + $2 WHERE id = $3`,
       [totalQuantity, sale.total_amount, customer_id]
     );
+    
     await client.query('COMMIT');
     res.status(201).json({ sale_id, sale_number: saleResult.sale_number });
   } catch (err) {
@@ -161,6 +190,32 @@ exports.getSaleItems = async (req, res) => {
   }
 };
 
+// Get sale details with items for stock management
+exports.getSaleDetails = async (req, res) => {
+  const { saleId } = req.params;
+  try {
+    const saleResult = await pool.query(
+      `SELECT s.*, c.full_name as customer_name, c.email as customer_email, c.phone as customer_phone
+       FROM sales s
+       LEFT JOIN customers c ON s.customer_id = c.id
+       WHERE s.id = $1 AND s.is_active = true`,
+      [saleId]
+    );
+    
+    if (saleResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Sale not found' });
+    }
+    
+    const sale = saleResult.rows[0];
+    const items = await getSaleItemsBySaleId(saleId);
+    
+    res.json({ ...sale, items });
+  } catch (err) {
+    console.error('Error fetching sale details:', err);
+    res.status(500).json({ error: 'Failed to fetch sale details', details: err.message });
+  }
+};
+
 exports.getAllSales = async (req, res) => {
   try {
     const sales = await getAllSales();
@@ -172,10 +227,31 @@ exports.getAllSales = async (req, res) => {
 
 exports.deleteSale = async (req, res) => {
   const { saleId } = req.params;
+  const client = await pool.connect();
   try {
+    await client.query('BEGIN');
+    
+    // Get sale items before deletion to restore stock
+    const saleItems = await getSaleItemsBySaleId(saleId);
+    
+    // Restore stock quantities
+    for (const item of saleItems) {
+      await client.query(
+        'UPDATE products SET current_stock = current_stock + $1, updated_at = NOW() WHERE id = $2',
+        [item.quantity, item.product_id]
+      );
+    }
+    
+    // Delete the sale
     await deleteSale(saleId);
+    
+    await client.query('COMMIT');
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to delete sale' });
+    await client.query('ROLLBACK');
+    console.error('Error deleting sale:', err);
+    res.status(500).json({ error: 'Failed to delete sale', details: err.message });
+  } finally {
+    client.release();
   }
 }; 
