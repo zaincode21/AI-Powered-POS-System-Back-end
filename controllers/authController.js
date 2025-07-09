@@ -28,7 +28,7 @@ async function login(req, res) {
     }
     const user = await userModel.getUserByEmailAndRole(email, role);
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials.fghjkfghjklfghj' });
+      return res.status(401).json({ error: 'Invalid credentials.' });
     }
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
