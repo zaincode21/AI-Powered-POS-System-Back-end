@@ -42,13 +42,13 @@ exports.upsertCustomer = async (customer) => {
 
 // Get all customers
 exports.getAllCustomers = async () => {
-  const result = await pool.query('SELECT * FROM customers ORDER BY created_at DESC');
+  const result = await pool.query('SELECT * FROM customers WHERE is_active = TRUE ORDER BY created_at DESC');
   return result.rows;
 };
 
 // Get customer by ID
 exports.getCustomerById = async (id) => {
-  const result = await pool.query('SELECT * FROM customers WHERE id = $1', [id]);
+  const result = await pool.query('SELECT * FROM customers WHERE id = $1 AND is_active = TRUE', [id]);
   return result.rows[0];
 };
 
@@ -64,6 +64,6 @@ exports.updateCustomer = async (id, customer) => {
 
 // Delete customer by ID
 exports.deleteCustomer = async (id) => {
-  await pool.query('DELETE FROM customers WHERE id = $1', [id]);
+  await pool.query('UPDATE customers SET is_active = FALSE WHERE id = $1', [id]);
   return { success: true };
 }; 

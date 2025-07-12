@@ -47,6 +47,7 @@ exports.updateCustomer = async (req, res) => {
 // Delete customer
 exports.deleteCustomer = async (req, res) => {
   try {
+    console.log("recivied resquest ", req.params)
     await customerModel.deleteCustomer(req.params.id);
     res.json({ success: true });
   } catch (err) {
