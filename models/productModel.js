@@ -144,6 +144,17 @@ async function getPriceHistory(productId) {
   return result.rows;
 }
 
+async function getProductByNumber(product_number) {
+  const result = await pool.query(
+    `SELECT p.*, c.name as category_name, s.name as supplier_name
+     FROM products p
+     LEFT JOIN categories c ON p.category_id = c.id
+     LEFT JOIN suppliers s ON p.supplier_id = s.id
+     WHERE p.product_number = $1`, [product_number]
+  );
+  return result.rows[0];
+}
+
 module.exports = {
   createProduct,
   getProducts,
@@ -151,4 +162,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   getPriceHistory,
+  getProductByNumber,
 }; 
