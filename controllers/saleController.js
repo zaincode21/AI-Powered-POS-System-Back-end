@@ -10,6 +10,14 @@ exports.createSale = async (req, res) => {
     await client.query('BEGIN');
     const { customer, sale, items } = req.body;
     
+    // Validate that user_id exists in the database
+    if (sale.user_id) {
+      const userCheck = await client.query('SELECT id FROM users WHERE id = $1', [sale.user_id]);
+      if (userCheck.rows.length === 0) {
+        throw new Error(`User with ID ${sale.user_id} does not exist. Please log in again.`);
+      }
+    }
+    
     // 1. Validate stock availability before processing
     for (const item of items) {
       const stockResult = await client.query(
