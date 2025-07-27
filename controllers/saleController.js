@@ -34,15 +34,32 @@ exports.createSale = async (req, res) => {
         throw new Error(`Insufficient stock for ${product.name}. Available: ${product.current_stock}, Requested: ${item.quantity}`);
       }
     }
+
+    // 2. AI Fraud Detection
+    const { AIFraudDetectionService } = require('../services/aiService');
+    const transaction = {
+      user_id: sale.user_id,
+      total_amount: sale.total_amount,
+      items: items,
+      timestamp: new Date().toISOString()
+    };
     
-    // 2. Upsert customer
+    const fraudAnalysis = await AIFraudDetectionService.detectFraud(transaction);
+    
+    if (fraudAnalysis.isFraudulent) {
+      console.warn('Potential fraud detected:', fraudAnalysis);
+      // For now, we'll log the fraud but still process the transaction
+      // In production, you might want to block or flag these transactions
+    }
+    
+    // 3. Upsert customer
     const customer_id = await upsertCustomer(customer);
     
-    // 3. Insert sale
+    // 4. Insert sale
     const saleResult = await insertSale(sale, customer_id);
     const sale_id = saleResult.id;
     
-    // 4. Insert sale items and update stock
+    // 5. Insert sale items and update stock
     let totalQuantity = 0;
     for (const item of items) {
       await insertSaleItem(sale_id, item);
@@ -56,7 +73,7 @@ exports.createSale = async (req, res) => {
       totalQuantity += item.quantity;
     }
     
-    // 5. Update customer analytics
+    // 6. Update customer analytics
     await client.query(
       `UPDATE customers SET total_purchases = COALESCE(total_purchases,0) + $1, total_spent = COALESCE(total_spent,0) + $2 WHERE id = $3`,
       [totalQuantity, sale.total_amount, customer_id]
