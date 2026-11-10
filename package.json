@@ -4,8 +4,8 @@
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
-    "start": "node server.js",
-    "build": "echo 'No build step required'",
+    "start": "node init && node server.js",
+    "build": "node init && echo 'No build step required'",
     "postinstall": "npm run build"
   },
   "dependencies": {
